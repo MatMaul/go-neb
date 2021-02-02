@@ -1,6 +1,7 @@
 package distributor
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -11,37 +12,30 @@ import (
 
 const ServiceType = "distributor"
 
+type Service struct {
+	types.DefaultService
+
+	Items map[string]map[string]json.RawMessage `json:"items"`
+}
+
 type item struct {
-	Name      string `json:"name"`
 	MatrixURL string `json:"matrix_url"`
 	Reaction  string `json:"reaction"`
 }
 
-type Service struct {
-	types.DefaultService
-
-	Items map[string][]item `json:"items"`
-}
-
-// Commands supported:
-//    !echo some message
-// Responds with a notice of "some message".
 func (e *Service) Commands(cli types.MatrixClient) []types.Command {
 	var cmds []types.Command
 
 	for itemType, items := range e.Items {
-		itemsMap := make(map[string]item)
-		for _, item := range items {
-			itemsMap[item.Name] = item
-		}
-
 		cmds = append(cmds, types.Command{
 
 			Path: []string{itemType},
 			Command: func(roomID id.RoomID, userID id.UserID, args []string, eventID id.EventID) ([]interface{}, error) {
 				itemName := strings.TrimSpace(strings.Join(args, " "))
-				item, exists := itemsMap[itemName]
+				rawItem, exists := items[itemName]
 				if exists {
+					var item item
+					json.Unmarshal(rawItem, &item)
 					return []interface{}{
 						&mevt.ReactionEventContent{
 							RelatesTo: mevt.RelatesTo{
