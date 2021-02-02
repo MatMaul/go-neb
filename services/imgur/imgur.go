@@ -119,13 +119,15 @@ func (s *Service) Commands(client types.MatrixClient) []types.Command {
 	return []types.Command{
 		{
 			Path: []string{"imgur", "help"},
-			Command: func(roomID id.RoomID, userID id.UserID, args []string) (interface{}, error) {
-				return usageMessage(), nil
+			Command: func(roomID id.RoomID, userID id.UserID, args []string, eventID id.EventID) ([]interface{}, error) {
+				return []interface{}{
+					usageMessage(),
+				}, nil
 			},
 		},
 		{
 			Path: []string{"imgur"},
-			Command: func(roomID id.RoomID, userID id.UserID, args []string) (interface{}, error) {
+			Command: func(roomID id.RoomID, userID id.UserID, args []string, eventID id.EventID) ([]interface{}, error) {
 				return s.cmdImgSearch(client, roomID, userID, args)
 			},
 		},
@@ -141,10 +143,10 @@ func usageMessage() *mevt.MessageEventContent {
 }
 
 // Search Imgur for a relevant image and upload it to matrix
-func (s *Service) cmdImgSearch(client types.MatrixClient, roomID id.RoomID, userID id.UserID, args []string) (interface{}, error) {
+func (s *Service) cmdImgSearch(client types.MatrixClient, roomID id.RoomID, userID id.UserID, args []string) ([]interface{}, error) {
 	// Check for query text
 	if len(args) < 1 {
-		return usageMessage(), nil
+		return []interface{}{usageMessage()}, nil
 	}
 
 	// Perform search
@@ -158,9 +160,11 @@ func (s *Service) cmdImgSearch(client types.MatrixClient, roomID id.RoomID, user
 	if searchResultImage != nil {
 		var imgURL = searchResultImage.Link
 		if imgURL == "" {
-			return mevt.MessageEventContent{
-				MsgType: mevt.MsgNotice,
-				Body:    "No image found!",
+			return []interface{}{
+				mevt.MessageEventContent{
+					MsgType: mevt.MsgNotice,
+					Body:    "No image found!",
+				},
 			}, nil
 		}
 
@@ -171,25 +175,31 @@ func (s *Service) cmdImgSearch(client types.MatrixClient, roomID id.RoomID, user
 		}
 
 		// Return image message
-		return mevt.MessageEventContent{
-			MsgType: "m.image",
-			Body:    querySentence,
-			URL:     resUpload.ContentURI.CUString(),
-			Info: &mevt.FileInfo{
-				Height:   searchResultImage.Height,
-				Width:    searchResultImage.Width,
-				MimeType: searchResultImage.Type,
+		return []interface{}{
+			mevt.MessageEventContent{
+				MsgType: "m.image",
+				Body:    querySentence,
+				URL:     resUpload.ContentURI.CUString(),
+				Info: &mevt.FileInfo{
+					Height:   searchResultImage.Height,
+					Width:    searchResultImage.Width,
+					MimeType: searchResultImage.Type,
+				},
 			},
 		}, nil
 	} else if searchResultAlbum != nil {
-		return mevt.MessageEventContent{
-			MsgType: mevt.MsgNotice,
-			Body:    "Search returned an album - Not currently supported",
+		return []interface{}{
+			mevt.MessageEventContent{
+				MsgType: mevt.MsgNotice,
+				Body:    "Search returned an album - Not currently supported",
+			},
 		}, nil
 	} else {
-		return mevt.MessageEventContent{
-			MsgType: mevt.MsgNotice,
-			Body:    "No image found!",
+		return []interface{}{
+			mevt.MessageEventContent{
+				MsgType: mevt.MsgNotice,
+				Body:    "No image found!",
+			},
 		}, nil
 	}
 }

@@ -15,7 +15,7 @@ type Command struct {
 	Path      []string
 	Arguments []string
 	Help      string
-	Command   func(roomID id.RoomID, userID id.UserID, arguments []string) (content interface{}, err error)
+	Command   func(roomID id.RoomID, userID id.UserID, arguments []string, eventID id.EventID) (content []interface{}, err error)
 }
 
 // An Expansion is something that actives when the user sends any message
@@ -24,7 +24,7 @@ type Command struct {
 // the appropriate RFC.
 type Expansion struct {
 	Regexp *regexp.Regexp
-	Expand func(roomID id.RoomID, userID id.UserID, matchingGroups []string) interface{}
+	Expand func(roomID id.RoomID, userID id.UserID, matchingGroups []string, eventID id.EventID) []interface{}
 }
 
 // Matches if the arguments start with the path of the command.

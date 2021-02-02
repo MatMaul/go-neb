@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/matrix-org/go-neb/clients"
+	"github.com/matrix-org/go-neb/services/utils"
 	"github.com/matrix-org/go-neb/types"
 	log "github.com/sirupsen/logrus"
 	"maunium.net/go/mautrix"
@@ -278,50 +279,66 @@ func (s *Service) Commands(cli types.MatrixClient) []types.Command {
 	return []types.Command{
 		{
 			Path: []string{"crypto_help"},
-			Command: func(roomID id.RoomID, userID id.UserID, arguments []string) (interface{}, error) {
-				return s.cmdCryptoHelp(roomID)
+			Command: func(roomID id.RoomID, userID id.UserID, arguments []string, eventID id.EventID) ([]interface{}, error) {
+				return utils.EncapsulateInSliceWithError(
+					s.cmdCryptoHelp(roomID),
+				)
 			},
 		},
 		{
 			Path: []string{"crypto_challenge"},
-			Command: func(roomID id.RoomID, userID id.UserID, arguments []string) (interface{}, error) {
-				return s.cmdCryptoChallenge(roomID, arguments)
+			Command: func(roomID id.RoomID, userID id.UserID, arguments []string, eventID id.EventID) ([]interface{}, error) {
+				return utils.EncapsulateInSliceWithError(
+					s.cmdCryptoChallenge(roomID, arguments),
+				)
 			},
 		},
 		{
 			Path: []string{"crypto_response"},
-			Command: func(roomID id.RoomID, userID id.UserID, arguments []string) (interface{}, error) {
-				return s.cmdCryptoResponse(userID, roomID, arguments)
+			Command: func(roomID id.RoomID, userID id.UserID, arguments []string, eventID id.EventID) ([]interface{}, error) {
+				return utils.EncapsulateInSliceWithError(
+					s.cmdCryptoResponse(userID, roomID, arguments),
+				)
 			},
 		},
 		{
 			Path: []string{"crypto_new_session"},
-			Command: func(roomID id.RoomID, userID id.UserID, arguments []string) (interface{}, error) {
-				return s.cmdCryptoNewSession(botClient, roomID)
+			Command: func(roomID id.RoomID, userID id.UserID, arguments []string, eventID id.EventID) ([]interface{}, error) {
+				return utils.EncapsulateInSliceWithError(
+					s.cmdCryptoNewSession(botClient, roomID),
+				)
 			},
 		},
 		{
 			Path: []string{"sas_verify_me"},
-			Command: func(roomID id.RoomID, userID id.UserID, arguments []string) (interface{}, error) {
-				return s.cmdSASVerifyMe(botClient, roomID, userID, arguments)
+			Command: func(roomID id.RoomID, userID id.UserID, arguments []string, eventID id.EventID) ([]interface{}, error) {
+				return utils.EncapsulateInSliceWithError(
+					s.cmdSASVerifyMe(botClient, roomID, userID, arguments),
+				)
 			},
 		},
 		{
 			Path: []string{"sas_decimal_code"},
-			Command: func(roomID id.RoomID, userID id.UserID, arguments []string) (interface{}, error) {
-				return s.cmdSASVerifyDecimalCode(botClient, roomID, userID, arguments)
+			Command: func(roomID id.RoomID, userID id.UserID, arguments []string, eventID id.EventID) ([]interface{}, error) {
+				return utils.EncapsulateInSliceWithError(
+					s.cmdSASVerifyDecimalCode(botClient, roomID, userID, arguments),
+				)
 			},
 		},
 		{
 			Path: []string{"request_my_room_key"},
-			Command: func(roomID id.RoomID, userID id.UserID, arguments []string) (interface{}, error) {
-				return s.cmdRequestRoomKey(botClient, roomID, userID, arguments)
+			Command: func(roomID id.RoomID, userID id.UserID, arguments []string, eventID id.EventID) ([]interface{}, error) {
+				return utils.EncapsulateInSliceWithError(
+					s.cmdRequestRoomKey(botClient, roomID, userID, arguments),
+				)
 			},
 		},
 		{
 			Path: []string{"forward_me_room_key"},
-			Command: func(roomID id.RoomID, userID id.UserID, arguments []string) (interface{}, error) {
-				return s.cmdForwardRoomKey(botClient, roomID, userID, arguments)
+			Command: func(roomID id.RoomID, userID id.UserID, arguments []string, eventID id.EventID) ([]interface{}, error) {
+				return utils.EncapsulateInSliceWithError(
+					s.cmdForwardRoomKey(botClient, roomID, userID, arguments),
+				)
 			},
 		},
 	}

@@ -115,7 +115,7 @@ func TestCommand(t *testing.T) {
 		t.Fatalf("Unexpected number of commands: %d", len(cmds))
 	}
 	cmd := cmds[1]
-	_, err = cmd.Command("!someroom:hyrule", "@navi:hyrule", []string{testSearchString})
+	_, err = cmd.Command("!someroom:hyrule", "@navi:hyrule", []string{testSearchString}, "")
 	if err != nil {
 		t.Fatalf("Failed to process command: %s", err.Error())
 	}

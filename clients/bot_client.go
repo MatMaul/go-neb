@@ -76,7 +76,7 @@ func (botClient *BotClient) InitOlmMachine(client *mautrix.Client, nebStore *mat
 			regexes = append(regexes, regex)
 		}
 	}
-	olmMachine.AcceptVerificationFrom = func(_ string, otherDevice *crypto.DeviceIdentity) (crypto.VerificationRequestResponse, crypto.VerificationHooks) {
+	olmMachine.AcceptVerificationFrom = func(_ string, otherDevice *crypto.DeviceIdentity, roomId id.RoomID) (crypto.VerificationRequestResponse, crypto.VerificationHooks) {
 		for _, regex := range regexes {
 			if regex.MatchString(otherDevice.UserID.String()) {
 				if atomic.LoadInt32(&botClient.ongoingVerificationCount) >= maximumVerifications {

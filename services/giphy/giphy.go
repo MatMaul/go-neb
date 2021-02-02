@@ -64,14 +64,14 @@ func (s *Service) Commands(client types.MatrixClient) []types.Command {
 	return []types.Command{
 		types.Command{
 			Path: []string{"giphy"},
-			Command: func(roomID id.RoomID, userID id.UserID, args []string) (interface{}, error) {
+			Command: func(roomID id.RoomID, userID id.UserID, args []string, eventID id.EventID) ([]interface{}, error) {
 				return s.cmdGiphy(client, roomID, userID, args)
 			},
 		},
 	}
 }
 
-func (s *Service) cmdGiphy(client types.MatrixClient, roomID id.RoomID, userID id.UserID, args []string) (interface{}, error) {
+func (s *Service) cmdGiphy(client types.MatrixClient, roomID id.RoomID, userID id.UserID, args []string) ([]interface{}, error) {
 	// only 1 arg which is the text to search for.
 	query := strings.Join(args, " ")
 	gifResult, err := s.searchGiphy(query)
@@ -92,15 +92,17 @@ func (s *Service) cmdGiphy(client types.MatrixClient, roomID id.RoomID, userID i
 		return nil, err
 	}
 
-	return mevt.MessageEventContent{
-		MsgType: event.MsgImage,
-		Body:    gifResult.Slug,
-		URL:     resUpload.ContentURI.CUString(),
-		Info: &mevt.FileInfo{
-			Height:   asInt(image.Height),
-			Width:    asInt(image.Width),
-			MimeType: "image/gif",
-			Size:     asInt(image.Size),
+	return []interface{}{
+		mevt.MessageEventContent{
+			MsgType: event.MsgImage,
+			Body:    gifResult.Slug,
+			URL:     resUpload.ContentURI.CUString(),
+			Info: &mevt.FileInfo{
+				Height:   asInt(image.Height),
+				Width:    asInt(image.Width),
+				MimeType: "image/gif",
+				Size:     asInt(image.Size),
+			},
 		},
 	}, nil
 }

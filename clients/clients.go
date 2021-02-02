@@ -187,8 +187,8 @@ func (c *Clients) onMessageEvent(botClient *BotClient, event *mevt.Event) {
 				args = strings.Split(body[1:], " ")
 			}
 
-			if response := runCommandForService(service.Commands(botClient), event, args); response != nil {
-				responses = append(responses, response)
+			if newResponses := runCommandForService(service.Commands(botClient), event, args); newResponses != nil {
+				responses = append(responses, newResponses...)
 			}
 		} else { // message isn't a command, it might need expanding
 			expansions := runExpansionsForService(service.Expansions(botClient), event, body)
@@ -197,12 +197,25 @@ func (c *Clients) onMessageEvent(botClient *BotClient, event *mevt.Event) {
 	}
 
 	for _, content := range responses {
-		if _, err := botClient.SendMessageEvent(event.RoomID, mevt.EventMessage, content); err != nil {
-			log.WithFields(log.Fields{
-				"room_id": event.RoomID,
-				"content": content,
-				"sender":  event.Sender,
-			}).WithError(err).Error("Failed to send command response")
+		_, isMessage := content.(*mevt.MessageEventContent)
+		if isMessage {
+			if _, err := botClient.SendMessageEvent(event.RoomID, mevt.EventMessage, content); err != nil {
+				log.WithFields(log.Fields{
+					"room_id": event.RoomID,
+					"content": content,
+					"sender":  event.Sender,
+				}).WithError(err).Error("Failed to send command response")
+			}
+		}
+		_, isReaction := content.(*mevt.ReactionEventContent)
+		if isReaction {
+			if _, err := botClient.Client.SendMessageEvent(event.RoomID, mevt.EventReaction, content); err != nil {
+				log.WithFields(log.Fields{
+					"room_id": event.RoomID,
+					"content": content,
+					"sender":  event.Sender,
+				}).WithError(err).Error("Failed to send command response")
+			}
 		}
 	}
 }
@@ -211,7 +224,7 @@ func (c *Clients) onMessageEvent(botClient *BotClient, event *mevt.Event) {
 // the matching command with the longest path. Returns the JSON encodable
 // content of a single matrix message event to use as a response or nil if no
 // response is appropriate.
-func runCommandForService(cmds []types.Command, event *mevt.Event, arguments []string) interface{} {
+func runCommandForService(cmds []types.Command, event *mevt.Event, arguments []string) []interface{} {
 	var bestMatch *types.Command
 	for i, command := range cmds {
 		matches := command.Matches(arguments)
@@ -231,7 +244,7 @@ func runCommandForService(cmds []types.Command, event *mevt.Event, arguments []s
 		"user_id": event.Sender,
 		"command": bestMatch.Path,
 	}).Info("Executing command")
-	content, err := bestMatch.Command(event.RoomID, event.Sender, cmdArgs)
+	content, err := bestMatch.Command(event.RoomID, event.Sender, cmdArgs, event.ID)
 	if err != nil {
 		if content != nil {
 			log.WithFields(log.Fields{
@@ -243,9 +256,11 @@ func runCommandForService(cmds []types.Command, event *mevt.Event, arguments []s
 			}).Warn("Command returned both error and content.")
 		}
 		metrics.IncrementCommand(bestMatch.Path[0], metrics.StatusFailure)
-		content = mevt.MessageEventContent{
-			MsgType: mevt.MsgNotice,
-			Body:    err.Error(),
+		content = []interface{}{
+			mevt.MessageEventContent{
+				MsgType: mevt.MsgNotice,
+				Body:    err.Error(),
+			},
 		}
 	} else {
 		metrics.IncrementCommand(bestMatch.Path[0], metrics.StatusSuccess)
@@ -267,7 +282,7 @@ func runExpansionsForService(expans []types.Expansion, event *mevt.Event, body s
 				continue
 			}
 			matches[matchingText] = true
-			if response := expansion.Expand(event.RoomID, event.Sender, matchingGroups); response != nil {
+			if response := expansion.Expand(event.RoomID, event.Sender, matchingGroups, event.ID); response != nil {
 				responses = append(responses, response)
 			}
 		}

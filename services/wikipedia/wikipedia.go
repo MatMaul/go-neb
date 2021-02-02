@@ -54,8 +54,12 @@ func (s *Service) Commands(client types.MatrixClient) []types.Command {
 	return []types.Command{
 		{
 			Path: []string{"wikipedia"},
-			Command: func(roomID id.RoomID, userID id.UserID, args []string) (interface{}, error) {
-				return s.cmdWikipediaSearch(client, roomID, userID, args)
+			Command: func(roomID id.RoomID, userID id.UserID, args []string, eventID id.EventID) ([]interface{}, error) {
+				cmd, err := s.cmdWikipediaSearch(client, roomID, userID, args)
+				if err != nil {
+					return []interface{}{}, err
+				}
+				return []interface{}{cmd}, nil
 			},
 		},
 	}

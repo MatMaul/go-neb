@@ -59,7 +59,7 @@ func TestCommandParsing(t *testing.T) {
 	cmds := []types.Command{
 		types.Command{
 			Path: []string{"test"},
-			Command: func(roomID id.RoomID, userID id.UserID, args []string) (interface{}, error) {
+			Command: func(roomID id.RoomID, userID id.UserID, args []string, eventID id.EventID) ([]interface{}, error) {
 				executedCmdArgs = args
 				return nil, nil
 			},

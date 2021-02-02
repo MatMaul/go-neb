@@ -54,13 +54,13 @@ func (s *Service) Commands(client types.MatrixClient) []types.Command {
 	return []types.Command{
 		{
 			Path: []string{"guggy"},
-			Command: func(roomID id.RoomID, userID id.UserID, args []string) (interface{}, error) {
+			Command: func(roomID id.RoomID, userID id.UserID, args []string, eventID id.EventID) ([]interface{}, error) {
 				return s.cmdGuggy(client, roomID, userID, args)
 			},
 		},
 	}
 }
-func (s *Service) cmdGuggy(client types.MatrixClient, roomID id.RoomID, userID id.UserID, args []string) (interface{}, error) {
+func (s *Service) cmdGuggy(client types.MatrixClient, roomID id.RoomID, userID id.UserID, args []string) ([]interface{}, error) {
 	// only 1 arg which is the text to search for.
 	querySentence := strings.Join(args, " ")
 	gifResult, err := s.text2gifGuggy(querySentence)
@@ -69,9 +69,11 @@ func (s *Service) cmdGuggy(client types.MatrixClient, roomID id.RoomID, userID i
 	}
 
 	if gifResult.GIF == "" {
-		return mevt.MessageEventContent{
-			MsgType: mevt.MsgNotice,
-			Body:    "No GIF found!",
+		return []interface{}{
+			mevt.MessageEventContent{
+				MsgType: mevt.MsgNotice,
+				Body:    "No GIF found!",
+			},
 		}, nil
 	}
 
@@ -80,14 +82,16 @@ func (s *Service) cmdGuggy(client types.MatrixClient, roomID id.RoomID, userID i
 		return nil, fmt.Errorf("Failed to upload Guggy image to matrix: %s", err.Error())
 	}
 
-	return mevt.MessageEventContent{
-		MsgType: "m.image",
-		Body:    querySentence,
-		URL:     resUpload.ContentURI.CUString(),
-		Info: &mevt.FileInfo{
-			Height:   int(math.Floor(gifResult.Height)),
-			Width:    int(math.Floor(gifResult.Width)),
-			MimeType: "image/gif",
+	return []interface{}{
+		mevt.MessageEventContent{
+			MsgType: "m.image",
+			Body:    querySentence,
+			URL:     resUpload.ContentURI.CUString(),
+			Info: &mevt.FileInfo{
+				Height:   int(math.Floor(gifResult.Height)),
+				Width:    int(math.Floor(gifResult.Width)),
+				MimeType: "image/gif",
+			},
 		},
 	}, nil
 }

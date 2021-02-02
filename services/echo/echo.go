@@ -24,10 +24,12 @@ func (e *Service) Commands(cli types.MatrixClient) []types.Command {
 	return []types.Command{
 		{
 			Path: []string{"echo"},
-			Command: func(roomID id.RoomID, userID id.UserID, args []string) (interface{}, error) {
-				return &mevt.MessageEventContent{
-					MsgType: mevt.MsgNotice,
-					Body:    strings.Join(args, " "),
+			Command: func(roomID id.RoomID, userID id.UserID, args []string, eventID id.EventID) ([]interface{}, error) {
+				return []interface{}{
+					&mevt.MessageEventContent{
+						MsgType: mevt.MsgNotice,
+						Body:    strings.Join(args, " "),
+					},
 				}, nil
 			},
 		},

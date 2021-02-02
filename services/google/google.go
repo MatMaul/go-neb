@@ -73,19 +73,19 @@ func (s *Service) Commands(client types.MatrixClient) []types.Command {
 	return []types.Command{
 		{
 			Path: []string{"google", "image"},
-			Command: func(roomID id.RoomID, userID id.UserID, args []string) (interface{}, error) {
+			Command: func(roomID id.RoomID, userID id.UserID, args []string, eventID id.EventID) ([]interface{}, error) {
 				return s.cmdGoogleImgSearch(client, roomID, userID, args)
 			},
 		},
 		{
 			Path: []string{"google", "help"},
-			Command: func(roomID id.RoomID, userID id.UserID, args []string) (interface{}, error) {
+			Command: func(roomID id.RoomID, userID id.UserID, args []string, eventID id.EventID) ([]interface{}, error) {
 				return usageMessage(), nil
 			},
 		},
 		{
 			Path: []string{"google"},
-			Command: func(roomID id.RoomID, userID id.UserID, args []string) (interface{}, error) {
+			Command: func(roomID id.RoomID, userID id.UserID, args []string, eventID id.EventID) ([]interface{}, error) {
 				return usageMessage(), nil
 			},
 		},
@@ -93,15 +93,17 @@ func (s *Service) Commands(client types.MatrixClient) []types.Command {
 }
 
 // usageMessage returns a matrix TextMessage representation of the service usage
-func usageMessage() *mevt.MessageEventContent {
-	return &mevt.MessageEventContent{
-		MsgType: mevt.MsgNotice,
-		Body:    `Usage: !google image image_search_text`,
+func usageMessage() []interface{} {
+	return []interface{}{
+		&mevt.MessageEventContent{
+			MsgType: mevt.MsgNotice,
+			Body:    `Usage: !google image image_search_text`,
+		},
 	}
 }
 
 func (s *Service) cmdGoogleImgSearch(client types.MatrixClient, roomID id.RoomID, userID id.UserID,
-	args []string) (interface{}, error) {
+	args []string) ([]interface{}, error) {
 
 	if len(args) < 1 {
 		return usageMessage(), nil
@@ -118,9 +120,11 @@ func (s *Service) cmdGoogleImgSearch(client types.MatrixClient, roomID id.RoomID
 
 	var imgURL = searchResult.Link
 	if imgURL == "" {
-		return mevt.MessageEventContent{
-			MsgType: mevt.MsgNotice,
-			Body:    "No image found!",
+		return []interface{}{
+			mevt.MessageEventContent{
+				MsgType: mevt.MsgNotice,
+				Body:    "No image found!",
+			},
 		}, nil
 	}
 
@@ -130,14 +134,16 @@ func (s *Service) cmdGoogleImgSearch(client types.MatrixClient, roomID id.RoomID
 		return nil, fmt.Errorf("Failed to upload Google image at URL %s (content type %s) to matrix: %s", imgURL, searchResult.Mime, err.Error())
 	}
 
-	return mevt.MessageEventContent{
-		MsgType: mevt.MsgImage,
-		Body:    querySentence,
-		URL:     resUpload.ContentURI.CUString(),
-		Info: &mevt.FileInfo{
-			Height:   int(math.Floor(searchResult.Image.Height)),
-			Width:    int(math.Floor(searchResult.Image.Width)),
-			MimeType: searchResult.Mime,
+	return []interface{}{
+		mevt.MessageEventContent{
+			MsgType: mevt.MsgImage,
+			Body:    querySentence,
+			URL:     resUpload.ContentURI.CUString(),
+			Info: &mevt.FileInfo{
+				Height:   int(math.Floor(searchResult.Image.Height)),
+				Width:    int(math.Floor(searchResult.Image.Width)),
+				MimeType: searchResult.Mime,
+			},
 		},
 	}, nil
 }

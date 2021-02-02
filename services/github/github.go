@@ -20,6 +20,7 @@ import (
 	"github.com/matrix-org/go-neb/matrix"
 	"github.com/matrix-org/go-neb/realms/github"
 	"github.com/matrix-org/go-neb/services/github/client"
+	"github.com/matrix-org/go-neb/services/utils"
 	"github.com/matrix-org/go-neb/types"
 	log "github.com/sirupsen/logrus"
 	mevt "maunium.net/go/mautrix/event"
@@ -566,59 +567,75 @@ func (s *Service) Commands(cli types.MatrixClient) []types.Command {
 	return []types.Command{
 		{
 			Path: []string{"github", "search"},
-			Command: func(roomID id.RoomID, userID id.UserID, args []string) (interface{}, error) {
-				return s.cmdGithubSearch(roomID, userID, args)
+			Command: func(roomID id.RoomID, userID id.UserID, args []string, eventID id.EventID) ([]interface{}, error) {
+				return utils.EncapsulateInSliceWithError(
+					s.cmdGithubSearch(roomID, userID, args),
+				)
 			},
 		},
 		{
 			Path: []string{"github", "create"},
-			Command: func(roomID id.RoomID, userID id.UserID, args []string) (interface{}, error) {
-				return s.cmdGithubCreate(roomID, userID, args)
+			Command: func(roomID id.RoomID, userID id.UserID, args []string, eventID id.EventID) ([]interface{}, error) {
+				return utils.EncapsulateInSliceWithError(
+					s.cmdGithubCreate(roomID, userID, args),
+				)
 			},
 		},
 		{
 			Path: []string{"github", "react"},
-			Command: func(roomID id.RoomID, userID id.UserID, args []string) (interface{}, error) {
-				return s.cmdGithubReact(roomID, userID, args)
+			Command: func(roomID id.RoomID, userID id.UserID, args []string, eventID id.EventID) ([]interface{}, error) {
+				return utils.EncapsulateInSliceWithError(
+					s.cmdGithubReact(roomID, userID, args),
+				)
 			},
 		},
 		{
 			Path: []string{"github", "comment"},
-			Command: func(roomID id.RoomID, userID id.UserID, args []string) (interface{}, error) {
-				return s.cmdGithubComment(roomID, userID, args)
+			Command: func(roomID id.RoomID, userID id.UserID, args []string, eventID id.EventID) ([]interface{}, error) {
+				return utils.EncapsulateInSliceWithError(
+					s.cmdGithubComment(roomID, userID, args),
+				)
 			},
 		},
 		{
 			Path: []string{"github", "assign"},
-			Command: func(roomID id.RoomID, userID id.UserID, args []string) (interface{}, error) {
-				return s.cmdGithubAssign(roomID, userID, args)
+			Command: func(roomID id.RoomID, userID id.UserID, args []string, eventID id.EventID) ([]interface{}, error) {
+				return utils.EncapsulateInSliceWithError(
+					s.cmdGithubAssign(roomID, userID, args),
+				)
 			},
 		},
 		{
 			Path: []string{"github", "close"},
-			Command: func(roomID id.RoomID, userID id.UserID, args []string) (interface{}, error) {
-				return s.cmdGithubClose(roomID, userID, args)
+			Command: func(roomID id.RoomID, userID id.UserID, args []string, eventID id.EventID) ([]interface{}, error) {
+				return utils.EncapsulateInSliceWithError(
+					s.cmdGithubClose(roomID, userID, args),
+				)
 			},
 		},
 		{
 			Path: []string{"github", "reopen"},
-			Command: func(roomID id.RoomID, userID id.UserID, args []string) (interface{}, error) {
-				return s.cmdGithubReopen(roomID, userID, args)
+			Command: func(roomID id.RoomID, userID id.UserID, args []string, eventID id.EventID) ([]interface{}, error) {
+				return utils.EncapsulateInSliceWithError(
+					s.cmdGithubReopen(roomID, userID, args),
+				)
 			},
 		},
 		{
 			Path: []string{"github", "help"},
-			Command: func(roomID id.RoomID, userID id.UserID, args []string) (interface{}, error) {
-				return &mevt.MessageEventContent{
-					MsgType: mevt.MsgNotice,
-					Body: strings.Join([]string{
-						cmdGithubCreateUsage,
-						cmdGithubReactUsage,
-						cmdGithubCommentUsage,
-						cmdGithubAssignUsage,
-						cmdGithubCloseUsage,
-						cmdGithubReopenUsage,
-					}, "\n"),
+			Command: func(roomID id.RoomID, userID id.UserID, args []string, eventID id.EventID) ([]interface{}, error) {
+				return []interface{}{
+					&mevt.MessageEventContent{
+						MsgType: mevt.MsgNotice,
+						Body: strings.Join([]string{
+							cmdGithubCreateUsage,
+							cmdGithubReactUsage,
+							cmdGithubCommentUsage,
+							cmdGithubAssignUsage,
+							cmdGithubCloseUsage,
+							cmdGithubReopenUsage,
+						}, "\n"),
+					},
 				}, nil
 			},
 		},
@@ -635,7 +652,7 @@ func (s *Service) Expansions(cli types.MatrixClient) []types.Expansion {
 	return []types.Expansion{
 		types.Expansion{
 			Regexp: ownerRepoIssueRegex,
-			Expand: func(roomID id.RoomID, userID id.UserID, matchingGroups []string) interface{} {
+			Expand: func(roomID id.RoomID, userID id.UserID, matchingGroups []string, eventID id.EventID) []interface{} {
 				// There's an optional group in the regex so matchingGroups can look like:
 				// [foo/bar#55 foo bar 55]
 				// [#55                55]
@@ -672,12 +689,14 @@ func (s *Service) Expansions(cli types.MatrixClient) []types.Expansion {
 					log.WithField("issue_number", matchingGroups[3]).Print("Bad issue number")
 					return nil
 				}
-				return s.expandIssue(roomID, userID, matchingGroups[1], matchingGroups[2], num)
+				return []interface{}{
+					s.expandIssue(roomID, userID, matchingGroups[1], matchingGroups[2], num),
+				}
 			},
 		},
 		types.Expansion{
 			Regexp: ownerRepoCommitRegex,
-			Expand: func(roomID id.RoomID, userID id.UserID, matchingGroups []string) interface{} {
+			Expand: func(roomID id.RoomID, userID id.UserID, matchingGroups []string, eventID id.EventID) []interface{} {
 				// There's an optional group in the regex so matchingGroups can look like:
 				// [foo/bar@a123 foo bar a123]
 				// [@a123                a123]
@@ -710,7 +729,9 @@ func (s *Service) Expansions(cli types.MatrixClient) []types.Expansion {
 					}
 				}
 
-				return s.expandCommit(roomID, userID, matchingGroups[1], matchingGroups[2], matchingGroups[3])
+				return []interface{}{
+					s.expandCommit(roomID, userID, matchingGroups[1], matchingGroups[2], matchingGroups[3]),
+				}
 			},
 		},
 	}

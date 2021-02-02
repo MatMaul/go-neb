@@ -245,8 +245,12 @@ func (s *Service) Commands(cli types.MatrixClient) []types.Command {
 	return []types.Command{
 		types.Command{
 			Path: []string{"jira", "create"},
-			Command: func(roomID id.RoomID, userID id.UserID, args []string) (interface{}, error) {
-				return s.cmdJiraCreate(roomID, userID, args)
+			Command: func(roomID id.RoomID, userID id.UserID, args []string, eventID id.EventID) ([]interface{}, error) {
+				cmd, err := s.cmdJiraCreate(roomID, userID, args)
+				if err != nil {
+					return []interface{}{}, err
+				}
+				return []interface{}{cmd}, nil
 			},
 		},
 	}
@@ -262,8 +266,10 @@ func (s *Service) Expansions(cli types.MatrixClient) []types.Expansion {
 	return []types.Expansion{
 		{
 			Regexp: issueKeyRegex,
-			Expand: func(roomID id.RoomID, userID id.UserID, issueKeyGroups []string) interface{} {
-				return s.expandIssue(roomID, userID, issueKeyGroups)
+			Expand: func(roomID id.RoomID, userID id.UserID, issueKeyGroups []string, eventID id.EventID) []interface{} {
+				return []interface{}{
+					s.expandIssue(roomID, userID, issueKeyGroups),
+				}
 			},
 		},
 	}

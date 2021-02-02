@@ -19,3 +19,10 @@ func StrippedHTMLMessage(msgtype mevt.MessageType, htmlText string) mevt.Message
 		FormattedBody: htmlText,
 	}
 }
+
+func EncapsulateInSliceWithError(cmd interface{}, err error) ([]interface{}, error) {
+	if err != nil {
+		return []interface{}{}, err
+	}
+	return []interface{}{cmd}, nil
+}
