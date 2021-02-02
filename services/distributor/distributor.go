@@ -11,10 +11,16 @@ import (
 
 const ServiceType = "distributor"
 
+type item struct {
+	Name      string `json:"name"`
+	MatrixURL string `json:"matrix_url"`
+	Reaction  string `json:"reaction"`
+}
+
 type Service struct {
 	types.DefaultService
 
-	Items map[string]map[string]string `json:"items"`
+	Items map[string][]item `json:"items"`
 }
 
 // Commands supported:
@@ -24,24 +30,29 @@ func (e *Service) Commands(cli types.MatrixClient) []types.Command {
 	var cmds []types.Command
 
 	for itemType, items := range e.Items {
+		itemsMap := make(map[string]item)
+		for _, item := range items {
+			itemsMap[item.Name] = item
+		}
+
 		cmds = append(cmds, types.Command{
 
 			Path: []string{itemType},
 			Command: func(roomID id.RoomID, userID id.UserID, args []string, eventID id.EventID) ([]interface{}, error) {
 				itemName := strings.TrimSpace(strings.Join(args, " "))
-				itemURL, exists := items[itemName]
+				item, exists := itemsMap[itemName]
 				if exists {
 					return []interface{}{
 						&mevt.ReactionEventContent{
 							RelatesTo: mevt.RelatesTo{
 								Type:    mevt.RelAnnotation,
 								EventID: id.EventID(eventID),
-								Key:     fmt.Sprintf("<img data-mx-emoticon src=\"%s\">", itemURL),
+								Key:     item.Reaction,
 							},
 						},
 						&mevt.MessageEventContent{
 							MsgType: mevt.MsgImage,
-							URL:     id.ContentURIString(itemURL),
+							URL:     id.ContentURIString(item.MatrixURL),
 						},
 					}, nil
 				} else {
